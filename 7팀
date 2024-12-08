@@ -1,0 +1,80 @@
+import pygame
+import random
+import sys
+
+pygame.init()    #설정을 초기화함
+
+WIDTH, HEIGHT = 370, 400    #게임 화면 크기 설정
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("화재 진압 게임")
+
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+BLACK = (0, 0, 0)
+
+class Window:    #창문 클래스
+    def __init__(self, x, y):
+        self.rect = pygame.Rect(x, y, 80, 120)
+        self.on_fire = False
+
+    def draw(self):
+        pygame.draw.rect(screen, BLACK, self.rect, 2)    #테두리를 추가하여 창틀을 표현함
+        if self.on_fire:
+            pygame.draw.rect(screen, RED, self.rect.inflate(-10, -10))
+
+#게임의 변수 설정
+window_spacing_x = 100
+window_spacing_y = 150
+windows = [Window(50 + (i % 3) * window_spacing_x, 50 + (i // 3) * window_spacing_y) for i in range(6)]
+score = 0
+font = pygame.font.Font(None, 36)
+
+#타이머 설정
+game_time = 60
+start_ticks = pygame.time.get_ticks()
+
+#게임 루프
+clock = pygame.time.Clock()
+while True:
+    screen.fill(WHITE)
+
+    for event in pygame.event.get():    #이벤트 처리
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            for window in windows:
+                if window.rect.collidepoint(event.pos):
+                    if window.on_fire:
+                        window.on_fire = False
+                        score += 1
+
+    if random.randint(1, 100) <= 5:    #5%확률로 무작위 화재 발생
+        random.choice(windows).on_fire = True
+
+    for window in windows:
+        window.draw()
+
+    score_text = font.render(f"Score: {score}", True, (0, 0, 0))
+    screen.blit(score_text, (10, 10))    #점수 표시
+
+    seconds = (pygame.time.get_ticks() - start_ticks) // 1000
+    remaining_time = game_time - seconds
+    if remaining_time < 0:
+        remaining_time = 0    #시간 초과
+        pygame.time.delay(1000)    #1초 대기
+        print(f"Your Score: {score}")
+        pygame.quit()
+        sys.exit()
+
+    timer_text = font.render(f"Timer: {remaining_time}", True, (0, 0, 0))
+    timer_rect = timer_text.get_rect(topright=(WIDTH - 10, 10))
+    screen.blit(timer_text, timer_rect)
+
+    # 마우스 커서를 따라다니는 파란 원(물 표현)
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+    pygame.draw.circle(screen, BLUE, (mouse_x, mouse_y), 10)
+
+    pygame.display.flip()
+    clock.tick(30)
